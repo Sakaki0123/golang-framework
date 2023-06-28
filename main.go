@@ -1,16 +1,17 @@
 package main
 
 import (
-  "framework/controllers"
-  "framework/framework"
+	"framework/controllers"
+	"framework/framework"
 )
 
 func main() {
-  engine := framework.NewEngine()
-  router := engine.Router
+	engine := framework.NewEngine()
+	router := engine.Router
 
-  router.Get("/lists", controllers.ListsController)
-  router.Get("/users", controllers.UsersController)
-  router.Get("/students", controllers.StudentsController)
-  engine.Run()
+	router.Get("/lists", controllers.ListsController)
+	router.Get("lists/:list_id", controllers.ListsController)
+	router.Get("/users", controllers.UsersController)
+	router.Get("/students", controllers.StudentsController)
+	engine.Run()
 }

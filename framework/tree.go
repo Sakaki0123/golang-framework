@@ -45,16 +45,41 @@ func (t *TreeNode) findChild(param string) *TreeNode {
 	return nil
 }
 
+// 再起的にpathを読むようにする
 func (t *TreeNode) Search(pathname string) func(rw http.ResponseWriter, r *http.Request) {
 	node := t
 	params := strings.Split(pathname, "/")
 
-	for _, param := range params {
-		child := node.findChild(param)
-		if child == nil {
-			return nil
-		}
-		node = child
+	result := dfs(node, params)
+	if result == nil {
+		return nil
 	}
+
 	return node.handler
+}
+
+func dfs(node *TreeNode, params []string) *TreeNode {
+	currentParams := params[0]
+	isLastParam := len(params) == 1
+	for _, child := range node.children {
+		if isLastParam {
+			if isGeneral(child.param) {
+				return child
+			}
+			if child.param == currentParams {
+				return child
+			}
+		}
+
+		if !isGeneral(child.param) && child.param != currentParams {
+			continue
+		}
+		result := dfs(child, params[1:])
+
+		if result != nil {
+			return result
+		}
+	}
+
+	return nil
 }

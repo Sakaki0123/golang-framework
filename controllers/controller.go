@@ -13,7 +13,7 @@ type StudentResponse struct {
 func StudentHandler(rw http.ResponseWriter, r *http.Request) {
 	queries := r.URL.Query()
 	name := queries.Get("name")
-	studentResponse := &StudentResponse {
+	studentResponse := &StudentResponse{
 		Name: name,
 	}
 
@@ -27,7 +27,6 @@ func StudentHandler(rw http.ResponseWriter, r *http.Request) {
 	rw.Write(responseData)
 }
 
-
 func UsersController(rw http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(rw, "users")
 }
@@ -40,4 +39,4 @@ func StudentsController(rw http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(rw, "students")
 }
 
-
+// func ListsController
