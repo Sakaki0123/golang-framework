@@ -18,8 +18,8 @@ func Contructor() TreeNode {
 	}
 }
 
-func (this *TreeNode) Insert(pathname string, handler func(rw http.ResponseWriter, r *http.Request)) {
-	node := this
+func (t *TreeNode) Insert(pathname string, handler func(rw http.ResponseWriter, r *http.Request)) {
+	node := t
 	params := strings.Split(pathname, "/")
 
 	for _, param := range params {
@@ -36,8 +36,8 @@ func (this *TreeNode) Insert(pathname string, handler func(rw http.ResponseWrite
 	node.handler = handler
 }
 
-func (this *TreeNode) findChild(param string) *TreeNode {
-	for _, child := range this.children {
+func (t *TreeNode) findChild(param string) *TreeNode {
+	for _, child := range t.children {
 		if child.param == param {
 			return child
 		}
@@ -45,8 +45,8 @@ func (this *TreeNode) findChild(param string) *TreeNode {
 	return nil
 }
 
-func (this *TreeNode) Search(pathname string) func(rw http.ResponseWriter, r *http.Request) {
-	node := this
+func (t *TreeNode) Search(pathname string) func(rw http.ResponseWriter, r *http.Request) {
+	node := t
 	params := strings.Split(pathname, "/")
 
 	for _, param := range params {

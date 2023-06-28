@@ -36,6 +36,7 @@ func ListsController(rw http.ResponseWriter, r *http.Request) {
 }
 
 func StudentsController(rw http.ResponseWriter, r *http.Request) {
+	StudentHandler(rw, r)
 	fmt.Fprint(rw, "students")
 }
 

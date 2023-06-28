@@ -1,7 +1,6 @@
 package framework
 
 import (
-  "errors"
   "net/http"
 )
 
@@ -11,31 +10,28 @@ type Engine struct {
 
 func NewEngine() *Engine {
   return &Engine{
-    Router: &Router{},
+    Router: &Router{
+      routingTable: Contructor(),
+    },
   }
 }
 
 type Router struct {
-  routingTable map[string]func(rw http.ResponseWriter, r *http.Request)
+  // routingTable map[string]func(rw http.ResponseWriter, r *http.Request)
+  routingTable TreeNode
 }
 
 func (r *Router) Get(pathname string, handler func(rw http.ResponseWriter, r *http.Request)) error {
 
-  if r.routingTable == nil {
-    r.routingTable = make(map[string]func(rw http.ResponseWriter, r *http.Request))
-  }
-
-  if r.routingTable[pathname] != nil {
-    return errors.New("existed")
-  }
-  r.routingTable[pathname] = handler
+  r.routingTable.Insert(pathname, handler)
   return nil // エラーなし
 }
 
 func (h *Engine) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 
   if r.Method == "GET" {
-    handler := h.Router.routingTable[r.URL.Path]
+    pathname := r.URL.Path
+    handler := h.Router.routingTable.Search(pathname)
     if handler == nil {
       rw.WriteHeader(http.StatusNotFound)
       return
