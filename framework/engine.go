@@ -18,30 +18,36 @@ func NewEngine() *Engine {
 }
 
 type Router struct {
-	// routingTable map[string]func(rw http.ResponseWriter, r *http.Request)
 	routingTable TreeNode
 }
 
-func isGeneral(params string) bool {
-	return strings.HasPrefix(params, ":")
-}
+func (r *Router) Get(pathname string, handler func(ctx *MyContext)) error {
+	pathname = strings.TrimSuffix(pathname, "/")
+	existedHandler := r.routingTable.Search(pathname)
 
-func (r *Router) Get(pathname string, handler func(rw http.ResponseWriter, r *http.Request)) error {
+	if existedHandler != nil {
+		panic("already exists")
+	}
 
 	r.routingTable.Insert(pathname, handler)
-	return nil // エラーなし
+	return nil
 }
 
 func (h *Engine) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 
+	ctx := NewMyContext(rw, r)
+
 	if r.Method == "GET" {
 		pathname := r.URL.Path
+		pathname = strings.TrimSuffix(pathname, "/")
 		handler := h.Router.routingTable.Search(pathname)
+
 		if handler == nil {
 			rw.WriteHeader(http.StatusNotFound)
 			return
 		}
-		handler(rw, r)
+
+		handler(ctx)
 		return
 	}
 }

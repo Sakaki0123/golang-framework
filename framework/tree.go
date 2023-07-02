@@ -1,13 +1,12 @@
 package framework
 
 import (
-	"net/http"
 	"strings"
 )
 
 type TreeNode struct {
 	children []*TreeNode
-	handler  func(rw http.ResponseWriter, r *http.Request)
+	handler  func(ctx *MyContext)
 	param    string
 }
 
@@ -18,12 +17,18 @@ func Contructor() TreeNode {
 	}
 }
 
-func (t *TreeNode) Insert(pathname string, handler func(rw http.ResponseWriter, r *http.Request)) {
-	node := t
+func isGeneral(param string) bool {
+	return strings.HasPrefix(param, ":")
+}
+
+func (this *TreeNode) Insert(pathname string, handler func(ctx *MyContext)) {
+	node := this
+
 	params := strings.Split(pathname, "/")
 
 	for _, param := range params {
 		child := node.findChild(param)
+
 		if child == nil {
 			child = &TreeNode{
 				param:    param,
@@ -33,11 +38,12 @@ func (t *TreeNode) Insert(pathname string, handler func(rw http.ResponseWriter, 
 		}
 		node = child
 	}
+
 	node.handler = handler
 }
 
-func (t *TreeNode) findChild(param string) *TreeNode {
-	for _, child := range t.children {
+func (this *TreeNode) findChild(param string) *TreeNode {
+	for _, child := range this.children {
 		if child.param == param {
 			return child
 		}
@@ -45,35 +51,40 @@ func (t *TreeNode) findChild(param string) *TreeNode {
 	return nil
 }
 
-// 再起的にpathを読むようにする
-func (t *TreeNode) Search(pathname string) func(rw http.ResponseWriter, r *http.Request) {
-	node := t
+func (this *TreeNode) Search(pathname string) func(ctx *MyContext) {
 	params := strings.Split(pathname, "/")
 
-	result := dfs(node, params)
+	result := dfs(this, params)
+
 	if result == nil {
 		return nil
 	}
 
-	return node.handler
+	return result.handler
 }
 
 func dfs(node *TreeNode, params []string) *TreeNode {
-	currentParams := params[0]
+	currentParam := params[0]
 	isLastParam := len(params) == 1
+
 	for _, child := range node.children {
+
 		if isLastParam {
 			if isGeneral(child.param) {
 				return child
 			}
-			if child.param == currentParams {
+
+			if child.param == currentParam {
 				return child
 			}
-		}
 
-		if !isGeneral(child.param) && child.param != currentParams {
 			continue
 		}
+
+		if !isGeneral(child.param) && child.param != currentParam {
+			continue
+		}
+
 		result := dfs(child, params[1:])
 
 		if result != nil {

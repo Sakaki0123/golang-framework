@@ -1,42 +1,36 @@
 package controllers
 
 import (
-	"encoding/json"
-	"fmt"
-	"net/http"
+	"framework/framework"
 )
 
 type StudentResponse struct {
 	Name string `json:"name"`
 }
 
-func StudentHandler(rw http.ResponseWriter, r *http.Request) {
-	queries := r.URL.Query()
-	name := queries.Get("name")
+func UsersController(ctx *framework.MyContext) {
+	ctx.WriteString("users")
+}
+func ListsController(ctx *framework.MyContext) {
+	ctx.WriteString("lists")
+}
+func ListItemController(ctx *framework.MyContext) {
+	ctx.WriteString("lists_items")
+}
+func ListNameController(ctx *framework.MyContext) {
+	ctx.WriteString("lists_names")
+}
+func StudentsController(ctx *framework.MyContext) {
+	name := ctx.QueryKey("name", "")
 	studentResponse := &StudentResponse{
 		Name: name,
 	}
 
-	responseData, err := json.Marshal(studentResponse)
-	if err != nil {
-		rw.WriteHeader(http.StatusInternalServerError)
-		rw.Write([]byte("Oops, something went wrong"))
-		return
-	}
-	rw.WriteHeader(http.StatusOK)
-	rw.Write(responseData)
+	ctx.Json(studentResponse)
+	ctx.WriteString("students")
 }
 
-func UsersController(rw http.ResponseWriter, r *http.Request) {
-	fmt.Fprint(rw, "users")
-}
-func ListsController(rw http.ResponseWriter, r *http.Request) {
-	fmt.Fprint(rw, "list")
+func ListPicturesController(ctx *framework.MyContext) {
+	ctx.WriteString("lists_pictures")
 }
 
-func StudentsController(rw http.ResponseWriter, r *http.Request) {
-	StudentHandler(rw, r)
-	fmt.Fprint(rw, "students")
-}
-
-// func ListsController
