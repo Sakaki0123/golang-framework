@@ -40,14 +40,18 @@ func (h *Engine) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		pathname := r.URL.Path
 		pathname = strings.TrimSuffix(pathname, "/")
-		handler := h.Router.routingTable.Search(pathname)
+		targetNode := h.Router.routingTable.Search(pathname)
 
-		if handler == nil {
+		if targetNode == nil || targetNode.handler == nil {
 			rw.WriteHeader(http.StatusNotFound)
 			return
 		}
 
-		handler(ctx)
+		paramDicts := targetNode.ParseParams(r.URL.Path)
+
+		ctx.SetParams(paramDicts)
+
+		targetNode.handler(ctx)
 		return
 	}
 }

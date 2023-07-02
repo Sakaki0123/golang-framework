@@ -31,6 +31,15 @@ func StudentsController(ctx *framework.MyContext) {
 }
 
 func ListPicturesController(ctx *framework.MyContext) {
-	ctx.WriteString("lists_pictures")
+	listID := ctx.GetParam(":list_id", "")
+	pictureID := ctx.GetParam(":picture_id", "")
+	type OUTPUT struct {
+		ListID    string `json:"list_id"`
+		PictureID string `json:"picture_id"`
+	}
+	output := &OUTPUT{
+		ListID:    listID,
+		PictureID: pictureID,
+	}
+	ctx.Json(output)
 }
-

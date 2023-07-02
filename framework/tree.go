@@ -8,6 +8,7 @@ type TreeNode struct {
 	children []*TreeNode
 	handler  func(ctx *MyContext)
 	param    string
+	parent   *TreeNode
 }
 
 func Contructor() TreeNode {
@@ -33,6 +34,7 @@ func (this *TreeNode) Insert(pathname string, handler func(ctx *MyContext)) {
 			child = &TreeNode{
 				param:    param,
 				children: []*TreeNode{},
+				parent:   node,
 			}
 			node.children = append(node.children, child)
 		}
@@ -51,16 +53,10 @@ func (this *TreeNode) findChild(param string) *TreeNode {
 	return nil
 }
 
-func (this *TreeNode) Search(pathname string) func(ctx *MyContext) {
+func (this *TreeNode) Search(pathname string) *TreeNode {
 	params := strings.Split(pathname, "/")
 
-	result := dfs(this, params)
-
-	if result == nil {
-		return nil
-	}
-
-	return result.handler
+	return dfs(this, params)
 }
 
 func dfs(node *TreeNode, params []string) *TreeNode {
@@ -93,4 +89,19 @@ func dfs(node *TreeNode, params []string) *TreeNode {
 	}
 
 	return nil
+}
+
+func (this *TreeNode) ParseParams(pathname string) map[string]string {
+	node := this
+	pathname = strings.TrimSuffix(pathname, "/")
+	paramArr := strings.Split(pathname, "/")
+
+	paramDicts := make(map[string]string)
+	for i:=len(paramArr)-1;i>0;i-- {
+		if isGeneral(node.param) {
+			paramDicts[node.param] = paramArr[i]
+		}
+		node = node.parent
+	}
+	return paramDicts
 }

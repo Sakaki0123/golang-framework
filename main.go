@@ -12,6 +12,7 @@ func main() {
 	router.Get("/", controllers.ListsController)
 	router.Get("/lists", controllers.ListsController)
 	router.Get("/lists/:list_id", controllers.ListItemController)
+	router.Get("/lists/:list_id/pictures/:picture_id", controllers.ListPicturesController)
 	router.Get("/users", controllers.UsersController)
 	router.Get("/students", controllers.StudentsController)
 	engine.Run()
