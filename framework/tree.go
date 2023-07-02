@@ -11,8 +11,8 @@ type TreeNode struct {
 	parent   *TreeNode
 }
 
-func Contructor() TreeNode {
-	return TreeNode{
+func Contructor() *TreeNode {
+	return &TreeNode{
 		param:    "",
 		children: []*TreeNode{},
 	}
