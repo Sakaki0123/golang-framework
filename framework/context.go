@@ -1,8 +1,11 @@
 package framework
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"html/template"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/textproto"
@@ -22,6 +25,16 @@ func NewMyContext(rw http.ResponseWriter, r *http.Request) *MyContext {
 	}
 }
 
+func (ctx *MyContext) BindJson(data any) error {
+	byteData, err := io.ReadAll(ctx.r.Body)
+	if err != nil {
+		return err
+	}
+	ctx.r.Body = io.NopCloser(bytes.NewBuffer(byteData))
+
+	return json.Unmarshal(byteData, data)
+}
+
 func (ctx *MyContext) Json(data any) {
 	responseData, err := json.Marshal(data)
 	if err != nil {
@@ -32,6 +45,33 @@ func (ctx *MyContext) Json(data any) {
 	ctx.rw.Header().Set("Content-Type", "application-json")
 	ctx.rw.WriteHeader(http.StatusOK)
 	ctx.rw.Write(responseData)
+}
+
+func (ctx *MyContext) JsonP(callback string, parametor any) error {
+	ctx.rw.Header().Add("Content-Type", "application/javascript")
+	callback = template.JSEscapeString(callback)
+	_, err := ctx.rw.Write([]byte(callback))
+	if err != nil {
+		return err
+	}
+	_, err = ctx.rw.Write([]byte("("))
+	if err != nil {
+		return err
+	}
+	parametorData, err := json.Marshal(parametor)
+	if err != nil {
+		return err
+	}
+	_, err = ctx.rw.Write(parametorData)
+	if err != nil {
+		return err
+	}
+	_, err = ctx.rw.Write([]byte(")"))
+	if err != nil {
+		return err
+	}
+	return nil
+
 }
 
 func (ctx *MyContext) WriteString(data string) {
@@ -109,4 +149,12 @@ func (ctx *MyContext) FormFile(key string) (*FormFileInfo, error) {
 		Header:   fileHeader.Header,
 		Size:     fileHeader.Size,
 	}, nil
+}
+
+func (ctx *MyContext) RenderHtml(filepath string, data any) error {
+	t, err := template.ParseFiles(filepath)
+	if err != nil {
+		return err
+	}
+	return t.Execute(ctx.rw, data)
 }
