@@ -1,8 +1,11 @@
 package framework
 
 import (
+	"context"
+	"fmt"
 	"net/http"
 	"strings"
+	"time"
 )
 
 type Engine struct {
@@ -58,6 +61,8 @@ func (h *Engine) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 
 	ctx := NewMyContext(rw, r)
 
+	ctx.Set("AuthUser", "test1111")
+
 	routingTable := h.Router.routingTables[strings.ToLower(r.Method)]
 	pathname := r.URL.Path
 	pathname = strings.TrimSuffix(pathname, "/")
@@ -72,7 +77,23 @@ func (h *Engine) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 
 	ctx.SetParams(paramDicts)
 
-	targetNode.handler(ctx)
+	ch := make(chan struct{})
+	go func() {
+		time.Sleep(time.Second * 1)
+		targetNode.handler(ctx)
+		ch <- struct{}{}
+	}()
+
+	durationContext, cancel := context.WithTimeout(r.Context(), time.Second*3)
+	defer cancel()
+	select {
+	case <-durationContext.Done():
+		ctx.SetTimeout(true)
+		fmt.Println("timeout")
+		ctx.rw.Write([]byte("timeout"))
+	case <-ch:
+		fmt.Println("done")
+	}
 
 	return
 }

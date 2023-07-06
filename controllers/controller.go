@@ -12,8 +12,9 @@ type PostsPageForm struct {
 }
 
 func PostsPageController(ctx *framework.MyContext) {
+	authUser := ctx.Get("AuthUser", "defaultAuthUser")
 	postsPageForm := &PostsPageForm{
-		Name: "defaultName",
+		Name: authUser.(string),
 	}
 	ctx.RenderHtml("./htmls/post_page.html", postsPageForm)
 }

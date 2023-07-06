@@ -9,12 +9,16 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/textproto"
+	"sync"
 )
 
 type MyContext struct {
-	rw     http.ResponseWriter
-	r      *http.Request
-	params map[string]string
+	rw         http.ResponseWriter
+	r          *http.Request
+	params     map[string]string
+	keys       map[string]any
+	mux        sync.RWMutex
+	hasTimeout bool
 }
 
 func NewMyContext(rw http.ResponseWriter, r *http.Request) *MyContext {
@@ -22,7 +26,40 @@ func NewMyContext(rw http.ResponseWriter, r *http.Request) *MyContext {
 		rw:     rw,
 		r:      r,
 		params: map[string]string{},
+		mux:    sync.RWMutex{},
 	}
+}
+
+func (ctx *MyContext) Get(key string, defaultValue any) any {
+	ctx.mux.RLock()
+	defer ctx.mux.RUnlock()
+	if ctx.keys == nil {
+		return defaultValue
+	}
+
+	if res, ok := ctx.keys[key]; ok {
+		return res
+	}
+	return defaultValue
+}
+
+func (ctx *MyContext) Set(key string, value any) {
+	ctx.mux.Lock()
+	defer ctx.mux.Unlock()
+	if ctx.keys == nil {
+		ctx.keys = make(map[string]any)
+
+	}
+
+	ctx.keys[key] = value
+}
+
+func (ctx *MyContext) SetTimeout(timeout bool) {
+	ctx.hasTimeout = timeout
+}
+
+func (ctx *MyContext) HasTimeout() bool {
+	return ctx.hasTimeout
 }
 
 func (ctx *MyContext) BindJson(data any) error {
@@ -48,6 +85,9 @@ func (ctx *MyContext) Json(data any) {
 }
 
 func (ctx *MyContext) JsonP(callback string, parametor any) error {
+	if ctx.HasTimeout() {
+		return nil
+	}
 	ctx.rw.Header().Add("Content-Type", "application/javascript")
 	callback = template.JSEscapeString(callback)
 	_, err := ctx.rw.Write([]byte(callback))
@@ -75,6 +115,9 @@ func (ctx *MyContext) JsonP(callback string, parametor any) error {
 }
 
 func (ctx *MyContext) WriteString(data string) {
+	if ctx.HasTimeout() {
+		return
+	}
 	ctx.rw.WriteHeader(http.StatusOK)
 	fmt.Fprint(ctx.rw, data)
 }
@@ -152,6 +195,9 @@ func (ctx *MyContext) FormFile(key string) (*FormFileInfo, error) {
 }
 
 func (ctx *MyContext) RenderHtml(filepath string, data any) error {
+	if ctx.HasTimeout() {
+		return nil
+	}
 	t, err := template.ParseFiles(filepath)
 	if err != nil {
 		return err
