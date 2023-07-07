@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"os"
+	"path"
 	"strings"
 	"time"
 )
@@ -59,6 +61,8 @@ func (r *Router) Delete(pathname string, handler func(ctx *MyContext)) error {
 
 func (h *Engine) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 
+	fileServer := http.FileServer(http.Dir("./static"))
+
 	ctx := NewMyContext(rw, r)
 
 	ctx.Set("AuthUser", "test1111")
@@ -66,6 +70,15 @@ func (h *Engine) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	routingTable := h.Router.routingTables[strings.ToLower(r.Method)]
 	pathname := r.URL.Path
 	pathname = strings.TrimSuffix(pathname, "/")
+
+	fPath := path.Join("./static", pathname)
+	fInfo, err := os.Stat(fPath)
+	fExists := err == nil && !fInfo.IsDir()
+	if fExists {
+		fileServer.ServeHTTP(rw, r)
+		return
+	}
+
 	targetNode := routingTable.Search(pathname)
 
 	if targetNode == nil || targetNode.handler == nil {
@@ -78,7 +91,15 @@ func (h *Engine) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	ctx.SetParams(paramDicts)
 
 	ch := make(chan struct{})
+	panicCh := make(chan struct{})
 	go func() {
+
+		defer func() {
+			if err := recover(); err != nil {
+				fmt.Println(err)
+				panicCh <- struct{}{}
+			}
+		}()
 		time.Sleep(time.Second * 1)
 		targetNode.handler(ctx)
 		ch <- struct{}{}
@@ -93,6 +114,9 @@ func (h *Engine) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		ctx.rw.Write([]byte("timeout"))
 	case <-ch:
 		fmt.Println("done")
+	case <-panicCh:
+		fmt.Println("panic")
+		ctx.rw.WriteHeader(500)
 	}
 
 	return
